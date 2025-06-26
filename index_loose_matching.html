@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Know India Through Every Station</title>
+</head>
+<body>
+  <h1>📍 Know India Through Every Station</h1>
+  <p id="output">Detecting location...</p>
+  <button onclick="speakFact()">🔊 Speak</button>
+  <select id="language" onchange="updateLanguage()">
+    <option value="en">English</option>
+    <option value="hi">हिन्दी</option>
+  </select>
+
+  <script>
+    const factsDatabase = {
+      "gwalior": {
+        en: "Gwalior is known for its magnificent fort and as the birthplace of the great musician Tansen.",
+        hi: "ग्वालियर अपने भव्य किले और महान संगीतकार तानसेन की जन्मस्थली के रूप में प्रसिद्ध है।"
+      },
+      "jhansi": {
+        en: "Jhansi is known for Rani Lakshmi Bai and its key role in the 1857 rebellion.",
+        hi: "झाँसी रानी लक्ष्मीबाई और 1857 की क्रांति में अपनी भूमिका के लिए प्रसिद्ध है।"
+      },
+      "cuttack": {
+        en: "Cuttack is one of the oldest cities in Odisha, famous for silver filigree work and Durga Puja.",
+        hi: "कटक उड़ीसा का एक प्राचीन शहर है, जो चांदी की कारीगरी और दुर्गा पूजा के लिए प्रसिद्ध है।"
+      },
+      "bharthia": {
+        en: "Bharthia is a culturally rich town with deep-rooted traditions and heritage.",
+        hi: "भारथिया एक सांस्कृतिक रूप से समृद्ध नगर है, जिसकी परंपराएं और विरासत गहरी हैं।"
+      },
+      "tonk": {
+        en: "Tonk is known for its Nawabi heritage and beautiful Islamic architecture.",
+        hi: "टोंक अपनी नवाबी विरासत और सुंदर इस्लामी वास्तुकला के लिए जाना जाता है।"
+      },
+      "rajkot": {
+        en: "Rajkot is an important city in Gujarat, known for its association with Mahatma Gandhi.",
+        hi: "राजकोट गुजरात का एक महत्वपूर्ण शहर है, जो महात्मा गांधी के साथ जुड़े होने के लिए प्रसिद्ध है।"
+      },
+      "tangi": {
+        en: "Tangi is a town in Odisha known for its serene lakeside views and rural charm.",
+        hi: "टांगी ओडिशा का एक शांत कस्बा है, जो अपनी झीलों और ग्रामीण सुंदरता के लिए जाना जाता है।"
+      },
+      "datia": {
+        en: "Datia is known for its majestic seven-storey palace and deep spiritual significance with many temples.",
+        hi: "दतिया अपने भव्य सात मंजिला महल और अनेक मंदिरों के कारण आध्यात्मिक महत्व के लिए प्रसिद्ध है।"
+      }
+    };
+
+    let selectedLang = "en";
+    let currentFact = "";
+
+    function updateLanguage() {
+      selectedLang = document.getElementById("language").value;
+      detectLocation(); // re-run location on language change
+    }
+
+    function speakFact() {
+      if (currentFact !== "") {
+        const utterance = new SpeechSynthesisUtterance(currentFact);
+        utterance.lang = selectedLang === "hi" ? "hi-IN" : "en-US";
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function fetchFact(place, lang) {
+      const placeKey = place.toLowerCase();
+      for (const key in factsDatabase) {
+        if (placeKey.includes(key) || key.includes(placeKey)) {
+          return factsDatabase[key][lang];
+        }
+      }
+      return lang === "hi" ? "इस स्थान के लिए जानकारी उपलब्ध नहीं है।" : "No facts available for this location.";
+    }
+
+    function detectLocation() {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(async position => {
+          const { latitude, longitude } = position.coords;
+          const apiKey = "53360715f60741e5a19d9b3f4080918b";
+
+          const response = await fetch(`https://api.geoapify.com/v1/geocode/reverse?lat=${latitude}&lon=${longitude}&apiKey=${apiKey}`);
+          const data = await response.json();
+
+          const place = data.features[0].properties.city ||
+                        data.features[0].properties.county ||
+                        data.features[0].properties.state_district ||
+                        data.features[0].properties.state ||
+                        data.features[0].properties.suburb;
+
+          console.log("Detected Place:", place);
+
+          currentFact = fetchFact(place, selectedLang);
+          document.getElementById("output").textContent = currentFact;
+          speakFact();
+
+        }, error => {
+          document.getElementById("output").textContent = "Location permission denied.";
+        });
+      } else {
+        document.getElementById("output").textContent = "Geolocation not supported.";
+      }
+    }
+
+    detectLocation();
+  </script>
+</body>
+</html>
